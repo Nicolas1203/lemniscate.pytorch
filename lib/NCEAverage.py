@@ -24,9 +24,11 @@ class NCEFunction(Function):
         weight.resize_(batchSize, K+1, inputSize)
 
         # inner product
-        out = torch.bmm(weight, x.data.resize_(batchSize, inputSize, 1))
+        
+        # out = torch.bmm(weight, x.data.resize_(batchSize, inputSize, 1))
+        out = torch.bmm(weight, x.view(batchSize, inputSize, 1))
         out.div_(T).exp_() # batchSize * self.K+1
-        x.data.resize_(batchSize, inputSize)
+        x.view(batchSize, inputSize)
 
         if Z < 0:
             params[2] = out.mean() * outputSize
@@ -53,11 +55,10 @@ class NCEFunction(Function):
         # add temperature
         gradOutput.data.div_(T)
 
-        gradOutput.data.resize_(batchSize, 1, K+1)
+        # gradOutput.view(batchSize, 1, K+1)
         
         # gradient of linear
-        gradInput = torch.bmm(gradOutput.data, weight)
-        gradInput.resize_as_(x)
+        gradInput = torch.bmm(gradOutput.view(batchSize, 1, K+1).data, weight)
 
         # update the non-parametric data
         weight_pos = weight.select(1, 0).resize_as_(x)
@@ -67,7 +68,7 @@ class NCEFunction(Function):
         updated_weight = weight_pos.div(w_norm)
         memory.index_copy_(0, y, updated_weight)
         
-        return gradInput, None, None, None, None
+        return gradInput.view_as(x), None, None, None, None
 
 class NCEAverage(nn.Module):
 
@@ -88,4 +89,3 @@ class NCEAverage(nn.Module):
         idx = self.multinomial.draw(batchSize * (self.K+1)).view(batchSize, -1)
         out = NCEFunction.apply(x, y, self.memory, idx, self.params)
         return out
-

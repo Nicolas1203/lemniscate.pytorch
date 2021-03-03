@@ -160,7 +160,7 @@ for epoch in range(start_epoch, start_epoch+200):
     train(epoch)
     acc = kNN(epoch, net, lemniscate, trainloader, testloader, 200, args.nce_t, 0)
 
-    if acc > best_acc:
+    if acc > best_acc:  
         print('Saving..')
         state = {
             'net': net.state_dict(),
