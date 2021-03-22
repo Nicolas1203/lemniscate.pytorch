@@ -151,10 +151,11 @@ def encode(net, img_dir, resume):
     for inputs, _, img_path in tqdm(encode_loader):
         inputs.to(device)
         features = net(inputs)
-        line = [img_path, features.tolist()[0]]
+        line = [img_path[0]] + features.tolist()[0]
         all_data.append(line)
-    df_all = pd.DataFrame(all_data, columns=['img_path', 'features'])
-    df_all.to_csv(f'./data/features_{resume[:-3]}.csv')
+
+    df_all = pd.DataFrame(all_data, columns=['img_path'] +  [str(i) for i in range(len(features.tolist()[0]))])
+    df_all.to_csv(f'./data/features_{resume[:-3]}.csv', index=False)
 
 def adjust_learning_rate(optimizer, epoch):
     """Sets the learning rate to the initial LR decayed by 10 every 30 epochs"""
@@ -200,6 +201,7 @@ def train(epoch, net, optimizer, trainloader, lemniscate, criterion):
               'Data: {data_time.val:.3f} ({data_time.avg:.3f}) '
               'Loss: {train_loss.val:.4f} ({train_loss.avg:.4f})'.format(
               epoch, batch_idx, len(trainloader), batch_time=batch_time, data_time=data_time, train_loss=train_loss))
+              
 
 if __name__ == '__main__':
     main()
